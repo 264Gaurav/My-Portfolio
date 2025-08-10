@@ -1,5 +1,41 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import {
+  FaApple,
+  FaReact,
+  FaNodeJs,
+  FaDatabase,
+  FaDocker,
+  FaPython,
+  FaGithub,
+  FaGitAlt,
+  FaJs,
+  FaHtml5,
+  FaCss3Alt,
+  FaCode,
+  FaBrain,
+  FaRobot,
+  FaChartLine,
+  FaServer,
+  FaCloud,
+  FaLinkedin,
+  FaStackOverflow,
+} from 'react-icons/fa';
+import {
+  SiExpress,
+  SiMongodb,
+  SiTailwindcss,
+  SiFramer,
+  SiDvc,
+  SiMlflow,
+  SiApacheairflow,
+  SiLangchain,
+  SiSqlite,
+  SiPostgresql,
+  SiMysql,
+  SiSwift,
+  SiCplusplus,
+} from 'react-icons/si';
 
 // Import coding profile images
 import gfgImg from '../assets/gfg.png';
@@ -8,31 +44,31 @@ import leetcodeImg from '../assets/code3.png.png';
 import hackerrankImg from '../assets/hackerRank.jpg.png';
 
 const skills = [
-  'iOS',
-  'Swift',
-  'SwiftUI',
-  'React',
-  'Node.js',
-  'Express',
-  'MongoDB',
-  'MERN',
-  'Docker',
-  'DVC',
-  'MLflow',
-  'Airflow',
-  'LangChain',
-  'LangGraph',
-  'LangSmith',
-  'RAG',
-  'Python',
-  'GenAI',
-  'C++',
-  'DSA/problem solving',
-  'Git',
-  'GitHub',
-  'Dagshub',
-  'vectorDB',
-  'SQL',
+  { name: 'iOS', icon: FaApple, color: '#000000' },
+  { name: 'Swift', icon: SiSwift, color: '#FF6B35' },
+  { name: 'SwiftUI', icon: SiSwift, color: '#007AFF' },
+  { name: 'React', icon: FaReact, color: '#61DAFB' },
+  { name: 'Node.js', icon: FaNodeJs, color: '#339933' },
+  { name: 'Express', icon: SiExpress, color: '#000000' },
+  { name: 'MongoDB', icon: SiMongodb, color: '#47A248' },
+  { name: 'MERN', icon: FaDatabase, color: '#4DB33D' },
+  { name: 'Docker', icon: FaDocker, color: '#2496ED' },
+  { name: 'DVC', icon: SiDvc, color: '#945DD6' },
+  { name: 'MLflow', icon: SiMlflow, color: '#019733' },
+  { name: 'Airflow', icon: SiApacheairflow, color: '#017CEE' },
+  { name: 'LangChain', icon: SiLangchain, color: '#FF6B35' },
+  { name: 'LangGraph', icon: SiLangchain, color: '#FF6B35' },
+  { name: 'LangSmith', icon: SiLangchain, color: '#FF6B35' },
+  { name: 'RAG', icon: FaBrain, color: '#FF6B35' },
+  { name: 'Python', icon: FaPython, color: '#3776AB' },
+  { name: 'GenAI', icon: FaBrain, color: '#FF6B35' },
+  { name: 'C++', icon: SiCplusplus, color: '#00599C' },
+  { name: 'DSA/problem solving', icon: FaCode, color: '#FF6B35' },
+  { name: 'Git', icon: FaGitAlt, color: '#F05032' },
+  { name: 'GitHub', icon: FaGithub, color: '#181717' },
+  { name: 'Dagshub', icon: FaCloud, color: '#945DD6' },
+  { name: 'vectorDB', icon: FaDatabase, color: '#FF6B35' },
+  { name: 'SQL', icon: FaDatabase, color: '#336791' },
 ];
 
 const codingProfiles = [
@@ -47,7 +83,7 @@ const codingProfiles = [
   {
     name: 'Code Studio',
     description:
-      'Specialist, achieved Level-6 with 6000+ score. Solved 300+ Problems.Also Data structure documentation covered.',
+      'Specialist, achieved Level-6 with 6000+ score. Solved 300+ Problems.',
     link: 'https://www.codingninjas.com/studio/profile/Gaurav_kashyap',
     image: codeStudioImg,
     color: '#3182CE',
@@ -82,17 +118,27 @@ export default function SkillCloud() {
         My Skills
       </motion.h3>
       <div className='flex flex-wrap gap-3 mb-16 justify-center'>
-        {skills.map((s, i) => (
-          <motion.div
-            key={s}
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.03, duration: 0.3 }}
-            className='bg-gray-100 dark:bg-white/10 px-4 py-2 rounded-full text-sm border border-gray-200 dark:border-white/20 text-gray-700 dark:text-white/80 hover:bg-gray-200 dark:hover:bg-white/20 hover:scale-105 transition-all duration-300 font-medium hover:shadow-lg'
-          >
-            {s}
-          </motion.div>
-        ))}
+        {skills.map((skill, i) => {
+          const IconComponent = skill.icon;
+          return (
+            <motion.div
+              key={skill.name}
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.03, duration: 0.3 }}
+              className='group bg-white dark:bg-white/10 p-2 rounded-full text-sm border border-gray-200 dark:border-white/20 text-gray-700 dark:text-white/80 hover:bg-gray-200 dark:hover:bg-white/20 hover:scale-105 transition-all duration-300 font-medium hover:shadow-lg flex items-center gap-2 cursor-pointer'
+              style={{
+                '--skill-color': skill.color,
+              }}
+            >
+              <IconComponent
+                className='text-2xl group-hover:scale-110 transition-transform duration-300 bg-white rounded-full p-0.5 shadow-sm'
+                style={{ color: skill.color }}
+              />
+              <span>{skill.name}</span>
+            </motion.div>
+          );
+        })}
       </div>
 
       <motion.h3
