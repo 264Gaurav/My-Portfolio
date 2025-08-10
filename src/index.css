@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+html, body, #root {
+  min-height: 100%;
+}
+
+/* Ensure light mode is the default */
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+}
+
+#root{
+  box-sizing: border-box;
+  min-height:100vh;
+  min-width: 100vw;
+  margin: 0;
+  padding: 0;
+}
