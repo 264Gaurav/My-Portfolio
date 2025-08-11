@@ -2,29 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askGemini } from '../utils/gemini';
 import profileImg from '../assets/Gaurav_DP.jpeg';
+import ChatTypeWriter from './ChatTypeWritter';
 
-// TypeWriter Component for Chatbot
-const ChatTypeWriter = ({ text, className, speed = 80 }) => {
-  const [displayText, setDisplayText] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    if (currentIndex < text.length) {
-      const timeout = setTimeout(() => {
-        setDisplayText(prev => prev + text[currentIndex]);
-        setCurrentIndex(prev => prev + 1);
-      }, speed);
-      return () => clearTimeout(timeout);
-    }
-  }, [currentIndex, text, speed]);
-
-  return (
-    <div className={className}>
-      {displayText}
-      {currentIndex < text.length && <span className='animate-pulse'>|</span>}
-    </div>
-  );
-};
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 
 const Chatbot = () => {
   const [open, setOpen] = useState(false);
@@ -58,7 +41,7 @@ const Chatbot = () => {
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = chatContainer;
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 20;
       setShowScrollArrow(!isAtBottom);
     };
 
@@ -66,22 +49,8 @@ const Chatbot = () => {
     return () => chatContainer.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // TTS: Speak latest bot message if speaker is on
-  // useEffect(() => {
-  //   if (!speakerOn) return;
-  //   const last = msgs[msgs.length - 1];
-  //   if (last && last.from === 'bot' && !last.isTyping) {
-  //     window.speechSynthesis.cancel();
-  //     const utter = new window.SpeechSynthesisUtterance(last.text);
-  //     utter.rate = 1.05;
-  //     utter.pitch = 1.1;
-  //     window.speechSynthesis.speak(utter);
-  //   }
-  // }, [msgs, speakerOn]);
-
   // TTS: Speak latest bot message immediately (including while typing) when speaker is on
   useEffect(() => {
-    // if speech not supported, just return
     if (
       typeof window === 'undefined' ||
       !('speechSynthesis' in window) ||
@@ -89,7 +58,6 @@ const Chatbot = () => {
     )
       return;
 
-    // If speaker turned off, cancel any ongoing speech and forget last spoken
     if (!speakerOn) {
       window.speechSynthesis.cancel();
       lastSpokenRef.current = null;
@@ -98,28 +66,19 @@ const Chatbot = () => {
 
     const last = msgs[msgs.length - 1];
     if (!last || last.from !== 'bot') return;
-
     const textToSpeak = (last.text || '').trim();
-    // don't speak placeholders like "Thinking..."
     if (!textToSpeak || textToSpeak === 'Thinking...') return;
-
-    // avoid repeating the same utterance
     if (lastSpokenRef.current === textToSpeak) return;
 
-    // cancel any existing utterance and speak the new one
     window.speechSynthesis.cancel();
     const utter = new window.SpeechSynthesisUtterance(textToSpeak);
     utter.rate = 1.05;
     utter.pitch = 1.1;
-
-    // remember what we spoke when finished
     utter.onend = () => {
       lastSpokenRef.current = textToSpeak;
     };
-
     window.speechSynthesis.speak(utter);
 
-    // cleanup: if effect reruns/unmounts, stop speaking
     return () => {
       window.speechSynthesis.cancel();
     };
@@ -166,9 +125,11 @@ const Chatbot = () => {
     setMsgs(m => [...m, { from: 'user', text: msg, isTyping: false }]);
     setText('');
 
+    // add placeholder thinking message
     setMsgs(m => [...m, { from: 'bot', text: 'Thinking...', isTyping: false }]);
     try {
       const reply = await askGemini(msg);
+      // replace the placeholder with reply, mark it as typing so typewriter runs
       setMsgs(m => [
         ...m.slice(0, -1),
         { from: 'bot', text: reply, isTyping: true },
@@ -197,7 +158,6 @@ const Chatbot = () => {
           >
             <div className='flex items-center justify-between mb-1 md:mb-2'>
               <div className='flex items-center gap-3'>
-                {/* Profile Image */}
                 <div className='w-10 h-10 rounded-full overflow-hidden border-2 border-white dark:border-gray-700 shadow-sm'>
                   <img
                     src={profileImg}
@@ -210,7 +170,6 @@ const Chatbot = () => {
                 </div>
               </div>
               <div className='flex items-center gap-2'>
-                {/* Speaker toggle */}
                 <button
                   onClick={() => setSpeakerOn(s => !s)}
                   className={`text-lg w-10 h-10 p-1 rounded-full transition-colors duration-200 ${
@@ -257,9 +216,23 @@ const Chatbot = () => {
                         <ChatTypeWriter
                           text={m.text}
                           className='text-gray-800 dark:text-white/90'
-                          speed={60}
+                          speed={28}
+                          pauseBetweenLines={140}
+                          renderMarkdown={true}
+                          onFinish={() => handleTypingFinished(i)}
                         />
+                      ) : m.from === 'bot' ? (
+                        // final bot message - render as sanitized Markdown
+                        <div className='text-gray-800 dark:text-white/90'>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                          >
+                            {m.text}
+                          </ReactMarkdown>
+                        </div>
                       ) : (
+                        // user message - plain text
                         <span>{m.text}</span>
                       )}
                     </div>
@@ -293,7 +266,11 @@ const Chatbot = () => {
                 onKeyPress={e => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    send(text);
+                    const trimmedText = text.trim();
+                    send(trimmedText);
+                    setText('');
+                    const textarea = document.querySelector('textarea');
+                    if (textarea) textarea.style.height = '40px';
                   }
                 }}
                 rows={1}
@@ -313,24 +290,16 @@ const Chatbot = () => {
               {/* Mic button */}
               <button
                 onClick={handleMic}
-                className={`px-3 py-2 rounded-xl h-10 flex items-center justify-center ${
+                className={`h-10 w-10 p-1 rounded-full flex items-center justify-center ${
                   listening
                     ? 'bg-sky-500 text-white animate-pulse'
                     : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80'
                 } transition-all duration-300 font-medium`}
                 title={listening ? 'Listening...' : 'Speak'}
               >
-                {listening ? '🎤...' : '🎤'}
+                {listening ? '🎤' : '🎤'}
               </button>
-              {/* <button
-                onClick={() => {
-                  send(text);
-                  setText('');
-                }}
-                className='px-4 py-2 rounded-xl h-10 flex items-center justify-center bg-gradient-to-r from-sky-500 to-indigo-600 text-white hover:from-sky-600 hover:to-indigo-700 transition-all duration-300 font-medium'
-              >
-                Send
-              </button> */}
+
               <button
                 onClick={() => {
                   const trimmedText = text.trim();
