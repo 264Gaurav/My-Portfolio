@@ -38,9 +38,6 @@ export default function Contact() {
         <h2 className='text-3xl font-bold text-gray-900 dark:text-white mb-2'>
           Contact Me
         </h2>
-        <h4 className='text-lg text-gray-600 dark:text-gray-400'>
-          Get in touch
-        </h4>
       </motion.div>
 
       <div className='grid lg:grid-cols-2 gap-12'>
@@ -54,10 +51,14 @@ export default function Contact() {
             Get in Touch
           </h3>
           <p className='text-gray-600 dark:text-gray-300 mb-8 leading-relaxed'>
-            Thank you for visiting my personal portfolio website. Connect with
-            me over socials. Please wait for a while all major projects will be
-            listed soon. Till then keep visiting. Connect with me over live
-            chat!
+            Thank you for visiting my personal portfolio. Feel free to connect
+            with me on social media. Please note that all major projects will be
+            listed here soon. You can also learn more about me through the
+            chatbot below. Contact me at{' '}
+            <a href='mailto:gauravsingh264209@gmail.com' className='underline'>
+              gauravsingh264209@gmail.com
+            </a>
+            .
           </p>
 
           <div className='space-y-6'>
@@ -82,7 +83,7 @@ export default function Contact() {
                   Address
                 </h4>
                 <p className='text-gray-600 dark:text-gray-300'>
-                  Azamgarh Uttar Pradesh
+                  Uttar Pradesh,India
                 </p>
               </div>
             </div>
@@ -112,14 +113,17 @@ export default function Contact() {
           <h3 className='text-2xl font-bold text-gray-900 dark:text-white mb-6'>
             Message Me
           </h3>
-          <form onSubmit={handleSubmit} className='space-y-4'>
+          <form
+            onSubmit={handleSubmit}
+            className='space-y-4 box-border overflow-x-hidden'
+          >
             <input
               type='text'
               name='name'
               placeholder='Name'
               value={formData.name}
               onChange={handleChange}
-              className='w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/50 focus:border-sky-500 dark:focus:border-sky-400 transition-colors outline-none'
+              className='box-border w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/50 focus:border-sky-500 dark:focus:border-sky-400 transition-colors outline-none'
               required
             />
             <input
@@ -128,7 +132,7 @@ export default function Contact() {
               placeholder='Email'
               value={formData.email}
               onChange={handleChange}
-              className='w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/50 focus:border-sky-500 dark:focus:border-sky-400 transition-colors outline-none'
+              className='box-border w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/50 focus:border-sky-500 dark:focus:border-sky-400 transition-colors outline-none'
               required
             />
             <input
@@ -137,7 +141,7 @@ export default function Contact() {
               placeholder='Subject'
               value={formData.subject}
               onChange={handleChange}
-              className='w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/50 focus:border-sky-500 dark:focus:border-sky-400 transition-colors outline-none'
+              className='box-border w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/50 focus:border-sky-500 dark:focus:border-sky-400 transition-colors outline-none'
               required
             />
             <textarea
@@ -146,7 +150,7 @@ export default function Contact() {
               value={formData.message}
               onChange={handleChange}
               rows='4'
-              className='w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/50 focus:border-sky-500 dark:focus:border-sky-400 transition-colors outline-none resize-none'
+              className='box-border w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/50 focus:border-sky-500 dark:focus:border-sky-400 transition-colors outline-none resize-none'
               required
             />
             <motion.button
