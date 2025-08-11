@@ -7,8 +7,8 @@ import rehypeSanitize from 'rehype-sanitize';
 const ChatTypeWriter = ({
   text = '',
   className = '',
-  speed = 28,
-  pauseBetweenLines = 140,
+  speed = 60,
+  pauseBetweenLines = 200,
   renderMarkdown = true,
   onFinish,
 }) => {

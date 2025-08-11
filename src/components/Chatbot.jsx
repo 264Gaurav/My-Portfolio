@@ -27,6 +27,16 @@ const Chatbot = () => {
   const recognitionRef = useRef(null);
   const lastSpokenRef = useRef(null);
 
+  const handleTypingFinished = index => {
+    setMsgs(prevMsgs => {
+      const updated = [...prevMsgs];
+      if (updated[index]) {
+        updated[index].isTyping = false; // Stop typewriter
+      }
+      return updated;
+    });
+  };
+
   // Auto-scroll to latest message
   useEffect(() => {
     if (chatEndRef.current) {
@@ -139,7 +149,7 @@ const Chatbot = () => {
         ...m.slice(0, -1),
         {
           from: 'bot',
-          text: 'Sorry, Gemini AI is not available right now.',
+          text: 'Sorry, AI is not available right now.',
           isTyping: true,
         },
       ]);
@@ -194,7 +204,7 @@ const Chatbot = () => {
             <div className='relative'>
               <div
                 ref={chatContainerRef}
-                className='h-60 md:h-100 overflow-y-auto space-y-3 mb-1 md:mb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600'
+                className='h-80 md:h-100 overflow-y-auto space-y-3 mb-1 md:mb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600'
               >
                 {msgs.map((m, i) => (
                   <div
@@ -216,8 +226,8 @@ const Chatbot = () => {
                         <ChatTypeWriter
                           text={m.text}
                           className='text-gray-800 dark:text-white/90'
-                          speed={28}
-                          pauseBetweenLines={140}
+                          speed={60}
+                          pauseBetweenLines={300}
                           renderMarkdown={true}
                           onFinish={() => handleTypingFinished(i)}
                         />
