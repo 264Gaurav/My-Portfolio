@@ -42,6 +42,7 @@ const Chatbot = () => {
   const chatEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const recognitionRef = useRef(null);
+  const lastSpokenRef = useRef(null);
 
   // Auto-scroll to latest message
   useEffect(() => {
@@ -66,16 +67,62 @@ const Chatbot = () => {
   }, []);
 
   // TTS: Speak latest bot message if speaker is on
+  // useEffect(() => {
+  //   if (!speakerOn) return;
+  //   const last = msgs[msgs.length - 1];
+  //   if (last && last.from === 'bot' && !last.isTyping) {
+  //     window.speechSynthesis.cancel();
+  //     const utter = new window.SpeechSynthesisUtterance(last.text);
+  //     utter.rate = 1.05;
+  //     utter.pitch = 1.1;
+  //     window.speechSynthesis.speak(utter);
+  //   }
+  // }, [msgs, speakerOn]);
+
+  // TTS: Speak latest bot message immediately (including while typing) when speaker is on
   useEffect(() => {
-    if (!speakerOn) return;
-    const last = msgs[msgs.length - 1];
-    if (last && last.from === 'bot' && !last.isTyping) {
+    // if speech not supported, just return
+    if (
+      typeof window === 'undefined' ||
+      !('speechSynthesis' in window) ||
+      !('SpeechSynthesisUtterance' in window)
+    )
+      return;
+
+    // If speaker turned off, cancel any ongoing speech and forget last spoken
+    if (!speakerOn) {
       window.speechSynthesis.cancel();
-      const utter = new window.SpeechSynthesisUtterance(last.text);
-      utter.rate = 1.05;
-      utter.pitch = 1.1;
-      window.speechSynthesis.speak(utter);
+      lastSpokenRef.current = null;
+      return;
     }
+
+    const last = msgs[msgs.length - 1];
+    if (!last || last.from !== 'bot') return;
+
+    const textToSpeak = (last.text || '').trim();
+    // don't speak placeholders like "Thinking..."
+    if (!textToSpeak || textToSpeak === 'Thinking...') return;
+
+    // avoid repeating the same utterance
+    if (lastSpokenRef.current === textToSpeak) return;
+
+    // cancel any existing utterance and speak the new one
+    window.speechSynthesis.cancel();
+    const utter = new window.SpeechSynthesisUtterance(textToSpeak);
+    utter.rate = 1.05;
+    utter.pitch = 1.1;
+
+    // remember what we spoke when finished
+    utter.onend = () => {
+      lastSpokenRef.current = textToSpeak;
+    };
+
+    window.speechSynthesis.speak(utter);
+
+    // cleanup: if effect reruns/unmounts, stop speaking
+    return () => {
+      window.speechSynthesis.cancel();
+    };
   }, [msgs, speakerOn]);
 
   // Mic input (Speech-to-Text)
@@ -151,7 +198,7 @@ const Chatbot = () => {
             <div className='flex items-center justify-between mb-1 md:mb-2'>
               <div className='flex items-center gap-3'>
                 {/* Profile Image */}
-                <div className='w-8 h-8 rounded-full overflow-hidden border-2 border-white dark:border-gray-700 shadow-sm'>
+                <div className='w-10 h-10 rounded-full overflow-hidden border-2 border-white dark:border-gray-700 shadow-sm'>
                   <img
                     src={profileImg}
                     alt='Gaurav Singh'
@@ -166,7 +213,7 @@ const Chatbot = () => {
                 {/* Speaker toggle */}
                 <button
                   onClick={() => setSpeakerOn(s => !s)}
-                  className={`text-lg px-2 py-1 rounded-full transition-colors duration-200 ${
+                  className={`text-lg w-10 h-10 p-1 rounded-full transition-colors duration-200 ${
                     speakerOn
                       ? 'bg-sky-500 text-white'
                       : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80'
@@ -177,7 +224,7 @@ const Chatbot = () => {
                 </button>
                 <button
                   onClick={() => setOpen(false)}
-                  className='text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors'
+                  className='text-xs px-3 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors'
                 >
                   Close
                 </button>
@@ -210,10 +257,10 @@ const Chatbot = () => {
                         <ChatTypeWriter
                           text={m.text}
                           className='text-gray-800 dark:text-white/90'
-                          speed={30}
+                          speed={60}
                         />
                       ) : (
-                        m.text
+                        <span>{m.text}</span>
                       )}
                     </div>
                   </div>
