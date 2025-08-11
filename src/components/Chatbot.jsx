@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { askGemini } from '../utils/gemini';
 import profileImg from '../assets/Gaurav_DP.jpeg';
 import ChatTypeWriter from './ChatTypeWritter';
@@ -22,51 +22,34 @@ const Chatbot = () => {
   const [listening, setListening] = useState(false);
   const [speakerOn, setSpeakerOn] = useState(false);
   const [showScrollArrow, setShowScrollArrow] = useState(false);
+
   const chatEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const recognitionRef = useRef(null);
   const lastSpokenRef = useRef(null);
-
-  const handleTypingFinished = index => {
-    setMsgs(prevMsgs => {
-      const updated = [...prevMsgs];
-      if (updated[index]) {
-        updated[index].isTyping = false; // Stop typewriter
-      }
-      return updated;
-    });
-  };
 
   // Auto-scroll to latest message
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [msgs, open]);
+  }, [msgs]);
 
   // Check if user is scrolled away from bottom
   useEffect(() => {
     const chatContainer = chatContainerRef.current;
     if (!chatContainer) return;
-
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = chatContainer;
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 20;
-      setShowScrollArrow(!isAtBottom);
+      setShowScrollArrow(scrollTop + clientHeight < scrollHeight - 20);
     };
-
     chatContainer.addEventListener('scroll', handleScroll);
     return () => chatContainer.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // TTS: Speak latest bot message immediately (including while typing) when speaker is on
+  // TTS for latest bot message
   useEffect(() => {
-    if (
-      typeof window === 'undefined' ||
-      !('speechSynthesis' in window) ||
-      !('SpeechSynthesisUtterance' in window)
-    )
-      return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
     if (!speakerOn) {
       window.speechSynthesis.cancel();
@@ -76,6 +59,7 @@ const Chatbot = () => {
 
     const last = msgs[msgs.length - 1];
     if (!last || last.from !== 'bot') return;
+
     const textToSpeak = (last.text || '').trim();
     if (!textToSpeak || textToSpeak === 'Thinking...') return;
     if (lastSpokenRef.current === textToSpeak) return;
@@ -89,31 +73,27 @@ const Chatbot = () => {
     };
     window.speechSynthesis.speak(utter);
 
-    return () => {
-      window.speechSynthesis.cancel();
-    };
+    return () => window.speechSynthesis.cancel();
   }, [msgs, speakerOn]);
 
-  // Mic input (Speech-to-Text)
+  // Mic input
   const handleMic = () => {
     if (listening) {
-      recognitionRef.current && recognitionRef.current.stop();
+      recognitionRef.current?.stop();
       setListening(false);
       return;
     }
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Speech recognition not supported in this browser.');
+      alert('Speech recognition not supported.');
       return;
     }
     const recognition = new SpeechRecognition();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onresult = event => {
-      const transcript = event.results[0][0].transcript;
-      setText(t => (t ? t + ' ' : '') + transcript);
+    recognition.onresult = e => {
+      setText(t => (t ? t + ' ' : '') + e.results[0][0].transcript);
       setListening(false);
     };
     recognition.onerror = () => setListening(false);
@@ -123,219 +103,185 @@ const Chatbot = () => {
     recognition.start();
   };
 
-  // Scroll to bottom
   const scrollToBottom = () => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   async function send(msg) {
     if (!msg) return;
     setMsgs(m => [...m, { from: 'user', text: msg, isTyping: false }]);
     setText('');
-
-    // add placeholder thinking message
     setMsgs(m => [...m, { from: 'bot', text: 'Thinking...', isTyping: false }]);
+
     try {
       const reply = await askGemini(msg);
-      // replace the placeholder with reply, mark it as typing so typewriter runs
       setMsgs(m => [
         ...m.slice(0, -1),
         { from: 'bot', text: reply, isTyping: true },
       ]);
-    } catch (e) {
+    } catch {
       setMsgs(m => [
         ...m.slice(0, -1),
         {
           from: 'bot',
           text: 'Sorry, AI is not available right now.',
-          isTyping: true,
+          isTyping: false,
         },
       ]);
     }
   }
 
+  const handleTypingFinished = index => {
+    setMsgs(prev =>
+      prev.map((m, i) => (i === index ? { ...m, isTyping: false } : m))
+    );
+  };
+
   return (
     <div className='fixed right-4 bottom-4 z-50'>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className='mb-2 w-80 md:w-100 bg-white/90 dark:bg-black/40 rounded-2xl p-1 md:p-2 shadow-2xl border border-gray-200 dark:border-white/20 backdrop-blur'
-          >
-            <div className='flex items-center justify-between mb-1 md:mb-2'>
-              <div className='flex items-center gap-3'>
-                <div className='w-10 h-10 rounded-full overflow-hidden border-2 border-white dark:border-gray-700 shadow-sm'>
-                  <img
-                    src={profileImg}
-                    alt='Gaurav Singh'
-                    className='w-full h-full object-cover'
-                  />
-                </div>
-                <div className='text-sm font-semibold text-gray-900 dark:text-white'>
-                  Know more about Me
-                </div>
-              </div>
-              <div className='flex items-center gap-2'>
-                <button
-                  onClick={() => setSpeakerOn(s => !s)}
-                  className={`text-lg w-10 h-10 p-1 rounded-full transition-colors duration-200 ${
-                    speakerOn
-                      ? 'bg-sky-500 text-white'
-                      : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80'
-                  }`}
-                  title={speakerOn ? 'Mute speaker' : 'Unmute speaker'}
-                >
-                  {speakerOn ? '🔊' : '🔇'}
-                </button>
-                <button
-                  onClick={() => setOpen(false)}
-                  className='text-xs px-3 py-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors'
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-
-            {/* Chat Container with Scroll Indicator */}
-            <div className='relative'>
-              <div
-                ref={chatContainerRef}
-                className='h-80 md:h-100 overflow-y-auto space-y-3 mb-1 md:mb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600'
-              >
-                {msgs.map((m, i) => (
-                  <div
-                    key={i}
-                    className={
-                      m.from === 'bot'
-                        ? 'text-left text-sm text-gray-900 dark:text-white/90'
-                        : 'text-right text-sm text-gray-700 dark:text-sky-100'
-                    }
-                  >
-                    <div
-                      className={
-                        m.from === 'bot'
-                          ? 'inline-block bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-xl text-gray-800 dark:text-white/90 max-w-[80%] leading-relaxed'
-                          : 'inline-block bg-sky-100 dark:bg-sky-600/20 px-2 py-1 rounded-xl text-gray-800 dark:text-sky-100 max-w-[80%] leading-relaxed'
-                      }
-                    >
-                      {m.from === 'bot' && m.isTyping ? (
-                        <ChatTypeWriter
-                          text={m.text}
-                          className='text-gray-800 dark:text-white/90'
-                          speed={60}
-                          pauseBetweenLines={300}
-                          renderMarkdown={true}
-                          onFinish={() => handleTypingFinished(i)}
-                        />
-                      ) : m.from === 'bot' ? (
-                        // final bot message - render as sanitized Markdown
-                        <div className='text-gray-800 dark:text-white/90'>
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            rehypePlugins={[rehypeRaw, rehypeSanitize]}
-                          >
-                            {m.text}
-                          </ReactMarkdown>
-                        </div>
-                      ) : (
-                        // user message - plain text
-                        <span>{m.text}</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {/* Auto-scroll anchor */}
-                <div ref={chatEndRef} />
-              </div>
-
-              {/* Scroll Indicator Arrow */}
-              <AnimatePresence>
-                {showScrollArrow && (
-                  <motion.button
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    onClick={scrollToBottom}
-                    className='absolute bottom-2 font-bold left-1/2 transform -translate-x-1/2 w-8 h-8 bg-sky-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-sky-600 transition-colors duration-200 z-10'
-                    title='Scroll to bottom'
-                  >
-                    ↓
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div className='flex gap-1 mb-1 text-sm md:text-auto items-end'>
-              <textarea
-                value={text}
-                onChange={e => setText(e.target.value)}
-                onKeyPress={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    const trimmedText = text.trim();
-                    send(trimmedText);
-                    setText('');
-                    const textarea = document.querySelector('textarea');
-                    if (textarea) textarea.style.height = '40px';
-                  }
-                }}
-                rows={1}
-                className='flex-1 bg-gray-50 dark:bg-white/5 rounded-xl px-3 py-2 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-white/10 placeholder-gray-500 dark:placeholder-white/50 focus:border-sky-500 dark:focus:border-sky-400 transition-colors resize-none overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600'
-                placeholder='Ask about skills, projects...'
-                style={{
-                  minHeight: '40px',
-                  maxHeight: '120px',
-                  height: 'auto',
-                }}
-                onInput={e => {
-                  e.target.style.height = 'auto';
-                  e.target.style.height =
-                    Math.min(e.target.scrollHeight, 120) + 'px';
-                }}
+      {/* Chat Window (always mounted) */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={open ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.25 }}
+        style={{ display: open ? 'block' : 'none' }}
+        className='mb-2 w-80 md:w-100 bg-white/90 dark:bg-black/40 rounded-2xl p-2 shadow-2xl border border-gray-200 dark:border-white/20 backdrop-blur'
+      >
+        {/* Header */}
+        <div className='flex items-center justify-between mb-2'>
+          <div className='flex items-center gap-3'>
+            <div className='w-10 h-10 rounded-full overflow-hidden border-2 border-white dark:border-gray-700 shadow-sm'>
+              <img
+                src={profileImg}
+                alt='Gaurav Singh'
+                className='w-full h-full object-cover'
               />
-              {/* Mic button */}
-              <button
-                onClick={handleMic}
-                className={`h-10 w-10 p-1 rounded-full flex items-center justify-center ${
-                  listening
-                    ? 'bg-sky-500 text-white animate-pulse'
-                    : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80'
-                } transition-all duration-300 font-medium`}
-                title={listening ? 'Listening...' : 'Speak'}
-              >
-                {listening ? '🎤' : '🎤'}
-              </button>
-
-              <button
-                onClick={() => {
-                  const trimmedText = text.trim();
-                  send(trimmedText);
-                  setText('');
-                  const textarea = document.querySelector('textarea');
-                  if (textarea) {
-                    textarea.style.height = '40px'; // reset to default min height
-                  }
-                }}
-                className='px-4 py-2 rounded-xl h-10 flex items-center justify-center bg-gradient-to-r from-sky-500 to-indigo-600 text-white hover:from-sky-600 hover:to-indigo-700 transition-all duration-300 font-medium'
-              >
-                Send
-              </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className='text-sm font-semibold text-gray-900 dark:text-white'>
+              Know more about Me
+            </div>
+          </div>
+          <div className='flex items-center gap-2'>
+            <button
+              onClick={() => setSpeakerOn(s => !s)}
+              className={`text-lg w-10 h-10 p-1 rounded-full transition-colors duration-200 ${
+                speakerOn
+                  ? 'bg-sky-500 text-white'
+                  : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80'
+              }`}
+            >
+              {speakerOn ? '🔊' : '🔇'}
+            </button>
+            <button
+              onClick={() => setOpen(false)}
+              className='px-2 py-1 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white font-semibold hover:bg-gray-200 dark:hover:bg-white/20'
+            >
+              Close
+            </button>
+          </div>
+        </div>
 
+        {/* Chat Messages */}
+        <div className='relative'>
+          <div
+            ref={chatContainerRef}
+            className='h-80 md:h-100 overflow-y-auto space-y-3 mb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600'
+          >
+            {msgs.map((m, i) => (
+              <div
+                key={i}
+                className={
+                  m.from === 'bot'
+                    ? 'text-left text-sm text-gray-900 dark:text-white/90'
+                    : 'text-right text-sm text-gray-700 dark:text-sky-100'
+                }
+              >
+                <div
+                  className={
+                    m.from === 'bot'
+                      ? 'inline-block bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-xl max-w-[80%] leading-relaxed'
+                      : 'inline-block bg-sky-100 dark:bg-sky-600/20 px-2 py-1 rounded-xl max-w-[80%] leading-relaxed'
+                  }
+                >
+                  {m.from === 'bot' && m.isTyping ? (
+                    <ChatTypeWriter
+                      text={m.text}
+                      speed={60}
+                      pauseBetweenLines={300}
+                      renderMarkdown={true}
+                      onFinish={() => handleTypingFinished(i)}
+                    />
+                  ) : m.from === 'bot' ? (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                    >
+                      {m.text}
+                    </ReactMarkdown>
+                  ) : (
+                    <span>{m.text}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Scroll to bottom arrow */}
+          {showScrollArrow && (
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              onClick={scrollToBottom}
+              className='absolute bottom-2 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-sky-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-sky-600'
+            >
+              ↓
+            </motion.button>
+          )}
+        </div>
+
+        {/* Input Row */}
+        <div className='flex gap-1 items-end'>
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyPress={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                send(text.trim());
+              }
+            }}
+            rows={1}
+            placeholder='Ask about skills, projects...'
+            className='flex-1 bg-gray-50 dark:bg-white/5 rounded-xl px-3 py-2 outline-none border border-gray-200 dark:border-white/10 focus:border-sky-500 dark:focus:border-sky-400 resize-none overflow-y-auto scrollbar-thin'
+          />
+          <button
+            onClick={handleMic}
+            className={`h-10 w-10 p-1 rounded-full flex items-center justify-center ${
+              listening
+                ? 'bg-sky-500 text-white animate-pulse'
+                : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80'
+            }`}
+          >
+            🎤
+          </button>
+          <button
+            onClick={() => send(text.trim())}
+            className='px-4 py-2 rounded-xl h-10 bg-gradient-to-r from-sky-500 to-indigo-600 text-white hover:from-sky-600 hover:to-indigo-700'
+          >
+            Send
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Chatbot toggle button */}
       {!open && (
         <motion.button
-          onClick={() => setOpen(o => !o)}
-          aria-label='Open chat'
+          onClick={() => setOpen(true)}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className='w-14 h-14 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 shadow-lg flex items-center justify-center text-white text-lg border-2 border-white/10 hover:shadow-xl transition-all duration-300'
+          className='w-14 h-14 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 shadow-lg flex items-center justify-center text-white text-lg'
         >
           💬
         </motion.button>
