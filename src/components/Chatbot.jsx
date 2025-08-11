@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import QA_KB from '../utils/qa';
+import { askGemini } from '../utils/gemini';
 
 const Chatbot = () => {
   const [open, setOpen] = useState(false);
@@ -8,40 +8,112 @@ const Chatbot = () => {
     { from: 'bot', text: 'Hi! Ask about skills, projects, or contact.' },
   ]);
   const [text, setText] = useState('');
+  const [listening, setListening] = useState(false);
+  const [speakerOn, setSpeakerOn] = useState(false);
+  const chatEndRef = useRef(null);
+  const recognitionRef = useRef(null);
 
-  function send(msg) {
+  // Auto-scroll to latest message
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [msgs, open]);
+
+  // TTS: Speak latest bot message if speaker is on
+  useEffect(() => {
+    if (!speakerOn) return;
+    const last = msgs[msgs.length - 1];
+    if (last && last.from === 'bot') {
+      window.speechSynthesis.cancel();
+      const utter = new window.SpeechSynthesisUtterance(last.text);
+      utter.rate = 1.05;
+      utter.pitch = 1.1;
+      window.speechSynthesis.speak(utter);
+    }
+  }, [msgs, speakerOn]);
+
+  // Mic input (Speech-to-Text)
+  const handleMic = () => {
+    if (listening) {
+      recognitionRef.current && recognitionRef.current.stop();
+      setListening(false);
+      return;
+    }
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Speech recognition not supported in this browser.');
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = event => {
+      const transcript = event.results[0][0].transcript;
+      setText(t => (t ? t + ' ' : '') + transcript);
+      setListening(false);
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    recognitionRef.current = recognition;
+    setListening(true);
+    recognition.start();
+  };
+
+  async function send(msg) {
     if (!msg) return;
     setMsgs(m => [...m, { from: 'user', text: msg }]);
-    const lower = msg.toLowerCase();
-    const found = QA_KB.find(k => lower.includes(k.q));
-    const reply = found
-      ? found.a
-      : "I don't know that yet. You can connect a real LLM in settings.";
-    setTimeout(() => setMsgs(m => [...m, { from: 'bot', text: reply }]), 500);
+    setText('');
+    setMsgs(m => [...m, { from: 'bot', text: 'Thinking...' }]);
+    try {
+      const reply = await askGemini(msg);
+      setMsgs(m => [...m.slice(0, -1), { from: 'bot', text: reply }]);
+    } catch (e) {
+      setMsgs(m => [
+        ...m.slice(0, -1),
+        { from: 'bot', text: 'Sorry, Gemini AI is not available right now.' },
+      ]);
+    }
   }
 
   return (
-    <div className='fixed right-6 bottom-6 z-50'>
+    <div className='fixed right-4 bottom-4 z-50'>
       <AnimatePresence>
         {open && (
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className='mb-4 w-80 bg-white/90 dark:bg-black/40 rounded-2xl p-4 shadow-2xl border border-gray-200 dark:border-white/20 backdrop-blur'
+            className='mb-4 w-80 md:w-100 bg-white/90 dark:bg-black/40 rounded-2xl p-4 shadow-2xl border border-gray-200 dark:border-white/20 backdrop-blur'
           >
             <div className='flex items-center justify-between mb-4'>
               <div className='text-sm font-semibold text-gray-900 dark:text-white'>
-                About — Chat
+                Know more about Me
               </div>
-              <button
-                onClick={() => setOpen(false)}
-                className='text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors'
-              >
-                Close
-              </button>
+              <div className='flex items-center gap-2'>
+                {/* Speaker toggle */}
+                <button
+                  onClick={() => setSpeakerOn(s => !s)}
+                  className={`text-lg px-2 py-1 rounded-full transition-colors duration-200 ${
+                    speakerOn
+                      ? 'bg-sky-500 text-white'
+                      : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80'
+                  }`}
+                  title={speakerOn ? 'Mute speaker' : 'Unmute speaker'}
+                >
+                  {speakerOn ? '🔊' : '🔇'}
+                </button>
+                <button
+                  onClick={() => setOpen(false)}
+                  className='text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors'
+                >
+                  Close
+                </button>
+              </div>
             </div>
-            <div className='h-44 overflow-y-auto space-y-3 mb-4'>
+            <div className='h-44 md:h-100 overflow-y-auto space-y-3 mb-4'>
               {msgs.map((m, i) => (
                 <div
                   key={i}
@@ -62,6 +134,8 @@ const Chatbot = () => {
                   </div>
                 </div>
               ))}
+              {/* Auto-scroll anchor */}
+              <div ref={chatEndRef} />
             </div>
             <div className='flex gap-3'>
               <input
@@ -71,6 +145,18 @@ const Chatbot = () => {
                 className='flex-1 bg-gray-50 dark:bg-white/5 rounded-xl px-3 py-2 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-white/10 placeholder-gray-500 dark:placeholder-white/50 focus:border-sky-500 dark:focus:border-sky-400 transition-colors'
                 placeholder='Ask about skills, projects...'
               />
+              {/* Mic button */}
+              <button
+                onClick={handleMic}
+                className={`px-3 py-2 rounded-xl ${
+                  listening
+                    ? 'bg-sky-500 text-white animate-pulse'
+                    : 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white/80'
+                } transition-all duration-300 font-medium`}
+                title={listening ? 'Listening...' : 'Speak'}
+              >
+                {listening ? '🎤...' : '🎤'}
+              </button>
               <button
                 onClick={() => {
                   send(text);
@@ -85,15 +171,17 @@ const Chatbot = () => {
         )}
       </AnimatePresence>
 
-      <motion.button
-        onClick={() => setOpen(o => !o)}
-        aria-label='Open chat'
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className='w-14 h-14 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 shadow-lg flex items-center justify-center text-white text-lg border-2 border-white/10 hover:shadow-xl transition-all duration-300'
-      >
-        {open ? '✕' : '💬'}
-      </motion.button>
+      {!open && (
+        <motion.button
+          onClick={() => setOpen(o => !o)}
+          aria-label='Open chat'
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className='w-14 h-14 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 shadow-lg flex items-center justify-center text-white text-lg border-2 border-white/10 hover:shadow-xl transition-all duration-300'
+        >
+          💬
+        </motion.button>
+      )}
     </div>
   );
 };

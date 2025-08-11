@@ -22,7 +22,7 @@ const experienceData = [
   {
     role: 'Research Engineer',
     company: 'IDEMIA',
-    period: '2024 - Present',
+    period: 'Aug 2024 - Present',
     description:
       'Working on cutting-edge research and innovation projects, leveraging AI/ML to design intelligent, feature-rich solutions.',
     color: '#e84949',

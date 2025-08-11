@@ -108,19 +108,6 @@ export default function Hero() {
             />
           </motion.div>
         </div>
-
-        {/* 3D Background */}
-        <Canvas camera={{ position: [0, 0, 6], fov: 50 }}>
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[5, 5, 5]} intensity={1} />
-          <ThreeLogo />
-          <OrbitControls
-            enableZoom={false}
-            enablePan={false}
-            autoRotate
-            autoRotateSpeed={0.6}
-          />
-        </Canvas>
       </motion.div>
     </section>
   );

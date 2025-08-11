@@ -83,7 +83,7 @@ const codingProfiles = [
   {
     name: 'Code Studio',
     description:
-      'Specialist, achieved Level-6 with 6000+ score. Solved 300+ Problems.',
+      'Specialist, achieved Level-6 with 6000+ score. Solved 300+ DSA and Programming Problems.',
     link: 'https://www.codingninjas.com/studio/profile/Gaurav_kashyap',
     image: codeStudioImg,
     color: '#3182CE',
