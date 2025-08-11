@@ -1,11 +1,86 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import ThreeLogo from '../three/ThreeLogo';
 import profileImg from '../assets/Gaurav_DP.jpeg';
 
+// Typing Animation Component with Loop
+const TypeWriter = ({
+  sentences,
+  className,
+  delay = 0,
+  speed = 50,
+  loopDelay = 2000,
+}) => {
+  const [displayText, setDisplayText] = useState('');
+  const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
+  const [currentCharIndex, setCurrentCharIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const currentSentence = sentences[currentSentenceIndex];
+
+    if (!isDeleting) {
+      // Typing forward
+      if (currentCharIndex < currentSentence.length) {
+        const timeout = setTimeout(() => {
+          setDisplayText(currentSentence.substring(0, currentCharIndex + 1));
+          setCurrentCharIndex(prev => prev + 1);
+        }, speed);
+        return () => clearTimeout(timeout);
+      } else {
+        // Finished typing, wait then start deleting
+        const timeout = setTimeout(() => {
+          setIsDeleting(true);
+        }, loopDelay);
+        return () => clearTimeout(timeout);
+      }
+    } else {
+      // Deleting backward
+      if (currentCharIndex > 0) {
+        const timeout = setTimeout(() => {
+          setDisplayText(currentSentence.substring(0, currentCharIndex - 1));
+          setCurrentCharIndex(prev => prev - 1);
+        }, speed / 2); // Delete faster than typing
+        return () => clearTimeout(timeout);
+      } else {
+        // Finished deleting, move to next sentence
+        setIsDeleting(false);
+        setCurrentSentenceIndex(prev => (prev + 1) % sentences.length);
+        setCurrentCharIndex(0);
+        setDisplayText('');
+      }
+    }
+  }, [
+    currentCharIndex,
+    currentSentenceIndex,
+    isDeleting,
+    sentences,
+    speed,
+    loopDelay,
+  ]);
+
+  return (
+    <motion.h2
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: delay }}
+      className={className}
+    >
+      {displayText}
+      <span className='animate-pulse'>|</span>
+    </motion.h2>
+  );
+};
+
 export default function Hero() {
+  const typingSentences = [
+    'Research Engineer @ IDEMIA',
+    'iOS & Fullstack Developer',
+    'AI/MLOps Enthusiast & Innovator',
+  ];
+
   return (
     <section
       id='home'
@@ -16,19 +91,21 @@ export default function Hero() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className='text-4xl md:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight'
+          className='text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight'
         >
           Gaurav Singh
         </motion.h1>
 
-        <motion.h2
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.15 }}
-          className='text-sm md:text-2xl font-extrabold text-gray-900 dark:text-white leading-tight'
-        >
-          IDEMIA Research Engineer | iOS & Fullstack Developer | AI Innovation
-        </motion.h2>
+        <TypeWriter
+          sentences={typingSentences}
+          className='text-md md:text-2xl font-extrabold leading-normal
+             text-gray-900 dark:text-transparent
+             dark:bg-gradient-to-r dark:from-sky-100 dark:to-indigo-500
+             dark:bg-clip-text'
+          delay={0.15}
+          speed={80}
+          loopDelay={2000}
+        />
 
         {/* Mobile Profile Image - Between h2 and p */}
         <motion.div
@@ -50,7 +127,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className='mt-6 text-sm md:text-lg text-gray-600 dark:text-gray-300 max-w-xl leading-relaxed'
+          className='mt-6 text-sm md:text-md text-gray-600 dark:text-white max-w-xl leading-relaxed'
         >
           I'm a Research Engineer and Full-Stack + iOS Developer passionate
           about building modern, impactful software solutions. With a strong
@@ -108,6 +185,19 @@ export default function Hero() {
             />
           </motion.div>
         </div>
+
+        {/* 3D Background */}
+        <Canvas camera={{ position: [0, 0, 6], fov: 50 }}>
+          <ambientLight intensity={0.6} />
+          <directionalLight position={[5, 5, 5]} intensity={1} />
+          <ThreeLogo />
+          <OrbitControls
+            enableZoom={false}
+            enablePan={false}
+            autoRotate
+            autoRotateSpeed={0.6}
+          />
+        </Canvas>
       </motion.div>
     </section>
   );
