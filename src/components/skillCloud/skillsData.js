@@ -43,6 +43,7 @@ import {
   SiGithub,
   SiXcode,
   SiNeo4J,
+  SiChatbot,
 } from 'react-icons/si';
 import { VscVscode } from 'react-icons/vsc';
 import { FcDataEncryption } from 'react-icons/fc';
@@ -61,11 +62,10 @@ export const SKILL_CATEGORIES = [
   'mobile',
   'programming',
   'database',
-  'devops',
-  'ml',
-  'others',
+  'ai',
   'competitive',
   'security',
+  'others',
 ];
 
 export const TOOL_CATEGORIES = [
@@ -99,7 +99,16 @@ export const skills = [
   { name: 'Postgres', icon: SiPostgresql, categories: ['database'] },
   { name: 'MySQL', icon: SiMysql, categories: ['database'] },
   { name: 'C++', icon: SiCplusplus, categories: ['programming'] },
-  { name: 'Python', icon: FaPython, categories: ['programming', 'ml'] },
+  { name: 'Python', icon: FaPython, categories: ['programming', 'ai'] },
+  { name: 'LangChain', icon: SiLangchain, categories: ['ai'] },
+  { name: 'LangGraph', icon: SiLangchain, categories: ['ai'] },
+  { name: 'Ollama', icon: SiOllama, categories: ['ai'] },
+  { name: 'Hugging Face', icon: SiHuggingface, categories: ['ai'] },
+  { name: 'Vector DBs', icon: FaDatabase, categories: ['ai'] },
+  { name: 'Graph DBs', icon: SiNeo4J, categories: ['ai'] },
+  { name: 'RAG', icon: FaBrain, categories: ['ai', 'gen-ai'] },
+  { name: 'Agetic-Ai', icon: FaBrain, categories: ['ai', 'gen-ai'] },
+  { name: 'Chatbot', icon: SiChatbot, categories: ['ai', 'gen-ai'] },
   {
     name: 'DSA',
     icon: FaCode,

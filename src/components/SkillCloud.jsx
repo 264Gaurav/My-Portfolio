@@ -79,7 +79,7 @@ export default function SkillCloud() {
           transition={{ duration: 0.35 }}
           className='flex items-center justify-between gap-4 mb-4 flex-wrap'
         >
-          <div className='flex gap-2'>
+          <div className='w-full flex justify-between gap-2'>
             <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
               Skills / Tools
             </h2>
@@ -103,14 +103,10 @@ export default function SkillCloud() {
         </motion.div>
 
         {/* Active filter pills (removable) */}
-        <div className='mb-3'>
-          <div className='flex justify-between max-h-20 overflow-scroll gap-2 flex-wrap items-center bg-gradient-to-r from-sky-800 to-indigo-800 p-2 rounded-md'>
-            {activePills.length === 0 ? (
-              <div className='text-sm text-white px-2 py-1 rounded-md'>
-                Showing all
-              </div>
-            ) : (
-              activePills.map(p => (
+        {activePills.length != 0 && (
+          <div className='w-full mb-3 flex justify-between items-center bg-gradient-to-r from-sky-800 to-indigo-800 p-2 rounded-md'>
+            <div className='flex max-h-20 overflow-scroll gap-2 flex-wrap items-center '>
+              {activePills.map(p => (
                 <button
                   key={p}
                   onClick={() => removeFilter(p)}
@@ -120,18 +116,17 @@ export default function SkillCloud() {
                   <span className='capitalize'>{p}</span>
                   <FaTimes className='w-3 h-3' aria-hidden />
                 </button>
-              ))
-            )}
-
+              ))}
+            </div>
             {/* quick clear all button */}
             <button
               onClick={clearAll}
-              className='ml-2 px-2 py-1 text-xs rounded-full bg-red-50 text-red-600'
+              className='ml-2 px-2 py-1 max-h-10 min-w-15 text-xs rounded-full bg-red-50 text-red-600'
             >
               Clear all
             </button>
           </div>
-        </div>
+        )}
 
         {/* Filters row */}
         <div className='mb-4'>
