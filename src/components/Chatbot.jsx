@@ -253,7 +253,7 @@ const Chatbot = () => {
               }
             }}
             rows={1}
-            placeholder='Ask about skills, projects...'
+            placeholder='Ask about Gaurav...'
             className='flex-1 bg-gray-50 dark:bg-white/5 rounded-xl px-3 py-2 outline-none border border-gray-200 dark:border-white/10 focus:border-sky-500 dark:focus:border-sky-400 resize-none overflow-y-auto scrollbar-thin'
           />
           <button

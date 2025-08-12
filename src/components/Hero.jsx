@@ -84,7 +84,7 @@ export default function Hero() {
   return (
     <section
       id='home'
-      className='grid md:grid-cols-2 gap-8 items-center min-h-[72vh]'
+      className='box-border grid md:grid-cols-2 gap-8 items-center min-h-[72vh] p-8 rounded-xl mb-4 shadow-md  shadow-cyan-600'
     >
       <div className='order-2 md:order-1'>
         <motion.h1
