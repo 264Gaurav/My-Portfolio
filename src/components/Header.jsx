@@ -15,7 +15,7 @@ export default function Header() {
   };
 
   return (
-    <header className='fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-[92%] max-w-4xl'>
+    <header className='fixed box-border top-4 left-1/2 transform -translate-x-1/2 z-50 w-[92%] max-w-4xl'>
       <motion.nav
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}

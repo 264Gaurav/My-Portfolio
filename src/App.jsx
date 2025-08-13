@@ -13,9 +13,9 @@ export default function App() {
   const { theme } = useTheme();
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-slate-900 dark:to-slate-800 transition-colors duration-500 overflow-x-hidden'>
+    <div className='box-border min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-slate-900 dark:to-slate-800 transition-colors duration-500 overflow-x-hidden'>
       <Header />
-      <main className='pt-24 px-4 md:px-12 lg:px-20'>
+      <main className='box-border pt-24 px-4 md:px-12 lg:px-20 overflow-hidden'>
         <Hero />
         <SkillCloud />
         <Projects />
