@@ -57,7 +57,7 @@ Highlighted Repos
 - ETL-Airflow - Dockerized Apache Airflow pipeline that extracts data from NASA's APOD API, transforms it, and loads it into Postgres. Uses Airflow hooks/operators for orchestration, scheduling, and monitoring in an isolated, reproducible environment.
 
 Tech Focus Seen on GitHub
-- LangChain, LangGraph, LangSmith, RAG, knowledge graphs (Neo4j), AI agents
+- LangChain, LangGraph, LangSmith, RAG, knowledge graphs (Neo4j), AI agents , dvc, MLFlow , airflow , VectorDB etc.
 - Swift/SwiftUI, React/Node/Express, MongoDB, Docker
 `;
 
