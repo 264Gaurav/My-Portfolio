@@ -57,13 +57,6 @@ A modern, responsive portfolio website built with React, showcasing my skills, p
 2. Update `tailwind.config.js` for custom configurations
 3. Edit `index.css` for global styles
 
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📞 Contact
 
